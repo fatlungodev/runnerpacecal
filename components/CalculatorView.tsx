@@ -12,7 +12,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
   const [speed, setSpeed] = useState<number>(15.0); // Internal state kept as km/h
   const [lane, setLane] = useState<number>(1);
   const [basis, setBasis] = useState<number>(100); // Default set to 100m
-  const [isDistanceLocked, setIsDistanceLocked] = useState(true);
+
 
   // Input mode: 'pace' or 'time'
   const [inputMode, setInputMode] = useState<'pace' | 'time'>('pace');
@@ -160,20 +160,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
                 <span className="material-symbols-outlined text-sm">straighten</span>
                 Distance (meters)
               </p>
-              <button
-                onClick={() => setIsDistanceLocked(!isDistanceLocked)}
-                className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors ${isDistanceLocked ? 'text-red-500 bg-red-500/10' : 'text-slate-400 bg-slate-800'
-                  }`}
-              >
-                <span className="material-symbols-outlined text-xs">{isDistanceLocked ? 'lock' : 'lock_open'}</span>
-                {isDistanceLocked ? 'Locked' : 'Unlock'}
-              </button>
+
             </div>
             <input
               type="number"
               value={distance}
               onChange={(e) => setDistance(parseFloat(e.target.value) || 0)}
-              readOnly={isDistanceLocked}
+
               onFocus={(e) => e.target.select()}
               className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none transition-all"
             />
