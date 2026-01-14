@@ -258,8 +258,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
                 <span className="material-symbols-outlined text-sm">timer</span>
                 Total Time for {distance}m
               </p>
-              <div className="text-[10px] font-bold text-red-500 uppercase">
-                {speed.toFixed(1)} km/h
+              <div className="flex flex-col items-end">
+                <div className="text-[10px] font-bold text-slate-500 uppercase">
+                  {speed.toFixed(1)} km/h
+                </div>
+                <div className="text-[10px] font-bold text-red-500 uppercase">
+                  {paceMins}:{parseFloat(paceSecs) < 10 ? '0' : ''}{parseFloat(paceSecs || '0').toFixed(1)} /km
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
