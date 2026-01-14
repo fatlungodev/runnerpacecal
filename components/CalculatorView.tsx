@@ -5,9 +5,11 @@ import { calculateSplits, formatTime, formatTimeWithMs, getEffectiveLapDistance 
 
 interface CalculatorViewProps {
   onSave: (run: Omit<RunHistory, 'id' | 'date'>) => void;
+  sessionData: RunHistory | null;
+  onClearSession: () => void;
 }
 
-const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
+const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, onClearSession }) => {
   const [distance, setDistance] = useState<number>(800);
   const [speed, setSpeed] = useState<number>(15.0); // Internal state kept as km/h
   const [lane, setLane] = useState<number>(1);
@@ -40,6 +42,33 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
       }
     }
   }, [laps, lane, calcBasis]);
+
+  // Load session data when provided
+  useEffect(() => {
+    if (sessionData) {
+      setDistance(sessionData.distance);
+      setSpeed(sessionData.speed);
+      setLane(sessionData.lane);
+
+      // Calculate pace from speed
+      const secsPerKm = 3600 / sessionData.speed;
+      const pMins = Math.floor(secsPerKm / 60);
+      const pSecs = (secsPerKm % 60).toFixed(1);
+      setPaceMins(pMins.toString());
+      setPaceSecs(pSecs);
+
+      // Calculate total time
+      const speedMs = (sessionData.speed * 1000) / 3600;
+      const totalSeconds = sessionData.distance / speedMs;
+      const tMins = Math.floor(totalSeconds / 60);
+      const tSecs = (totalSeconds % 60).toFixed(1);
+      setInputMins(tMins.toString());
+      setInputSecs(tSecs);
+
+      // Clear the session data after loading
+      onClearSession();
+    }
+  }, [sessionData, onClearSession]);
 
   // Logic: Convert Pace/km to Speed (km/h)
   useEffect(() => {

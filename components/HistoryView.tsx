@@ -8,9 +8,10 @@ interface HistoryViewProps {
   onDelete: (ids: string[]) => void;
   onUpdate: (run: RunHistory) => void;
   onBack: () => void;
+  onLoadSession: (run: RunHistory) => void;
 }
 
-const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, onBack }) => {
+const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, onBack, onLoadSession }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -130,9 +131,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
                       {formatTimeWithMs(run.totalTime)}
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-red-950/20 flex items-center justify-center rounded-lg border border-red-500/20">
+                  <button
+                    onClick={() => onLoadSession(run)}
+                    className="w-12 h-12 bg-red-950/20 flex items-center justify-center rounded-lg border border-red-500/20 hover:bg-red-950/40 hover:border-red-500/40 transition-all active:scale-95 cursor-pointer"
+                  >
                     <span className="material-symbols-outlined text-red-500">bolt</span>
-                  </div>
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-800/50">

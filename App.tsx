@@ -9,6 +9,7 @@ import SettingsView from './components/SettingsView';
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('calculator');
   const [history, setHistory] = useState<RunHistory[]>([]);
+  const [sessionData, setSessionData] = useState<RunHistory | null>(null);
 
   // Load history from localStorage
   useEffect(() => {
@@ -59,6 +60,11 @@ const App: React.FC = () => {
     localStorage.removeItem('runner_history');
   };
 
+  const loadSession = (run: RunHistory) => {
+    setSessionData(run);
+    setCurrentView('calculator');
+  };
+
   return (
     <div className="flex flex-col items-center min-h-screen bg-slate-950 w-full overflow-x-hidden">
       <div className="w-full max-w-[402px] min-h-screen flex flex-col bg-slate-950 relative border-x border-slate-900 shadow-2xl">
@@ -66,7 +72,7 @@ const App: React.FC = () => {
         {/* Main Content - Padded for Dynamic Island and Bottom Bar */}
         <div className="flex-1 overflow-y-auto no-scrollbar pt-12 pb-32">
           {currentView === 'calculator' && (
-            <CalculatorView onSave={saveRun} />
+            <CalculatorView onSave={saveRun} sessionData={sessionData} onClearSession={() => setSessionData(null)} />
           )}
           {currentView === 'history' && (
             <HistoryView
@@ -74,6 +80,7 @@ const App: React.FC = () => {
               onDelete={deleteRuns}
               onUpdate={updateRun}
               onBack={() => setCurrentView('calculator')}
+              onLoadSession={loadSession}
             />
           )}
           {currentView === 'settings' && (
