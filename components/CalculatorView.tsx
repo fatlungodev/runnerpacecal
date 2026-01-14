@@ -138,6 +138,40 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
     return calculateSplits(distance, speed, lane, basis);
   }, [distance, speed, lane, basis]);
 
+  const buildShareText = () => {
+    if (!splits.length) return 'No pacing data calculated.';
+
+    const lastSplit = splits[splits.length - 1];
+    const totalTime = formatTimeWithMs(lastSplit.running);
+
+    const pacePerKmSeconds = 3600 / speed;
+    const paceMinutes = Math.floor(pacePerKmSeconds / 60);
+    const paceSeconds = (pacePerKmSeconds % 60).toFixed(1);
+    const paceText = `${paceMinutes}:${parseFloat(paceSeconds) < 10 ? '0' : ''}${paceSeconds} /km`;
+
+    const header = [
+      'Track Pacing Result',
+      `Distance: ${distance.toFixed(1)}m`,
+      `Lane: ${lane}`,
+      `Total Time: ${totalTime}`,
+      `Pacing: ${paceText}`,
+      '',
+      'Splits:'
+    ].join('\n');
+
+    const splitsText = splits
+      .map((s, index) => {
+        const mark = `${s.mark}m`;
+        const interval = `${s.interval.toFixed(2)}s`;
+        const running = formatTimeWithMs(s.running);
+        const finishFlag = index === splits.length - 1 ? ' (Finish)' : '';
+        return `${mark}: interval ${interval}, running ${running}${finishFlag}`;
+      })
+      .join('\n');
+
+    return `${header}\n${splitsText}`;
+  };
+
   const handleSave = () => {
     onSave({
       name: `Session ${distance}m`,
@@ -357,6 +391,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
             </h3>
             <div className="flex items-center gap-2">
               <SaveButton onSave={handleSave} />
+              <CopyButton getText={buildShareText} />
               <button
                 onClick={() => setBasis(basis === 100 ? 200 : 100)}
                 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-2 py-1 rounded hover:bg-slate-700 transition-colors"
@@ -433,6 +468,39 @@ const SaveButton: React.FC<SaveButtonProps> = ({ onSave }) => {
     >
       <span className="material-symbols-outlined text-lg">
         {saved ? 'check' : 'save'}
+      </span>
+    </button>
+  );
+};
+
+interface CopyButtonProps {
+  getText: () => string;
+}
+
+const CopyButton: React.FC<CopyButtonProps> = ({ getText }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      const text = getText();
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text', err);
+      alert('Copy failed. Please try again.');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-200'
+        }`}
+      title="Copy to clipboard"
+    >
+      <span className="material-symbols-outlined text-lg">
+        {copied ? 'check' : 'content_copy'}
       </span>
     </button>
   );
