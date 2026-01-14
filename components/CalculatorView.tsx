@@ -127,7 +127,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
         <div className="text-red-600 flex size-10 shrink-0 items-center justify-center">
           <span className="material-symbols-outlined">directions_run</span>
         </div>
-        <h2 className="text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Refined Runner</h2>
+        <h2 className="text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Track Pacing</h2>
         <div className="size-10 flex items-center justify-center">
           <button className="size-8 rounded-full bg-slate-900 flex items-center justify-center text-slate-400">
             <span className="material-symbols-outlined text-xl">settings</span>
