@@ -16,4 +16,4 @@ export interface RunHistory {
   splits: Split[];
 }
 
-export type View = 'calculator' | 'history' | 'stats' | 'profile';
+export type View = 'calculator' | 'history' | 'settings';

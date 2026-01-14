@@ -16,14 +16,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
-  const filteredHistory = history.filter(run => 
+  const filteredHistory = history.filter(run =>
     run.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     run.distance.toString().includes(searchQuery) ||
     run.date.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
@@ -47,14 +47,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
 
   return (
     <div className="flex flex-col h-full bg-slate-950">
-      <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-900">
+      <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-900 pt-8">
         <div className="flex items-center p-4 pb-2 justify-between">
           <button onClick={onBack} className="text-white flex size-12 shrink-0 items-center justify-start">
             <span className="material-symbols-outlined">arrow_back_ios</span>
           </button>
           <h2 className="text-white text-lg font-bold leading-tight uppercase tracking-wider flex-1 text-center">History</h2>
           <div className="flex w-12 items-center justify-end">
-            <button 
+            <button
               onClick={() => setSelectedIds([])}
               className="text-red-500 text-sm font-bold uppercase"
             >
@@ -70,11 +70,11 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
             <div className="text-slate-500 flex items-center justify-center pl-4">
               <span className="material-symbols-outlined text-xl">search</span>
             </div>
-            <input 
+            <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder:text-slate-500 px-4 pl-2 text-base outline-none" 
-              placeholder="Search distance, date or time" 
+              className="flex-1 bg-transparent border-none focus:ring-0 text-white placeholder:text-slate-500 px-4 pl-2 text-base outline-none"
+              placeholder="Search distance, date or time"
             />
           </div>
         </label>
@@ -90,19 +90,19 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
           filteredHistory.map(run => (
             <div key={run.id} className="relative flex overflow-hidden rounded-xl bg-slate-900 border border-slate-800 shadow-sm transition-all group">
               <div className="flex items-center justify-center pl-4 pr-1 shrink-0">
-                <input 
+                <input
                   type="checkbox"
                   checked={selectedIds.includes(run.id)}
                   onChange={() => toggleSelect(run.id)}
-                  className="h-5 w-5 rounded border-slate-700 bg-slate-800 text-red-500 focus:ring-red-500" 
+                  className="h-5 w-5 rounded border-slate-700 bg-slate-800 text-red-500 focus:ring-red-500"
                 />
               </div>
-              
+
               <div className="flex-1 p-4 pr-12">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1 mr-2">
                     {editingId === run.id ? (
-                      <input 
+                      <input
                         value={editName}
                         autoFocus
                         onBlur={() => saveEdit(run)}
@@ -150,13 +150,13 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
               </div>
 
               <div className="absolute right-0 top-0 bottom-0 w-12 flex flex-col border-l border-slate-800/50">
-                <button 
+                <button
                   onClick={() => startEdit(run)}
                   className="flex-1 flex items-center justify-center text-slate-500 hover:text-red-500 transition-colors bg-white/5 active:bg-red-500/10"
                 >
                   <span className="material-symbols-outlined text-xl">edit</span>
                 </button>
-                <button 
+                <button
                   onClick={() => onDelete([run.id])}
                   className="flex-1 flex items-center justify-center text-slate-500 hover:text-red-400 transition-colors bg-white/10 active:bg-red-500/10"
                 >
@@ -171,7 +171,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ history, onDelete, onUpdate, 
       {selectedIds.length > 0 && (
         <div className="fixed bottom-24 left-0 right-0 z-[60] px-4 pointer-events-none">
           <div className="max-w-[430px] mx-auto pointer-events-auto">
-            <button 
+            <button
               onClick={handleBulkDelete}
               className="w-full flex items-center justify-between px-6 h-14 bg-red-600 text-white rounded-2xl shadow-xl active:scale-95 transition-transform"
             >

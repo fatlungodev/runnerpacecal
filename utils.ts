@@ -26,10 +26,10 @@ export const getLaneAdjustmentFactor = (lane: number): number => {
 export const calculateSplits = (distance: number, speedKmh: number, lane: number, basis: number = 200): any[] => {
   const speedMs = (speedKmh * 1000) / 3600;
   const adjustment = getLaneAdjustmentFactor(lane);
-  
+
   const splits = [];
   let currentMark = 0;
-  
+
   // Create split points
   const marks = [];
   for (let m = basis; m < distance; m += basis) {
@@ -42,7 +42,7 @@ export const calculateSplits = (distance: number, speedKmh: number, lane: number
     const adjustedMark = mark * adjustment;
     const runningTime = adjustedMark / speedMs;
     const intervalTime = runningTime - (splits.length > 0 ? splits[splits.length - 1].running : 0);
-    
+
     splits.push({
       mark,
       interval: intervalTime,
@@ -51,4 +51,7 @@ export const calculateSplits = (distance: number, speedKmh: number, lane: number
   });
 
   return splits;
+};
+export const getEffectiveLapDistance = (lane: number): number => {
+  return 400 * getLaneAdjustmentFactor(lane);
 };

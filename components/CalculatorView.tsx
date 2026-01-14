@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { RunHistory } from '../types';
-import { calculateSplits, formatTime, formatTimeWithMs } from '../utils';
+import { calculateSplits, formatTime, formatTimeWithMs, getEffectiveLapDistance } from '../utils';
 
 interface CalculatorViewProps {
   onSave: (run: Omit<RunHistory, 'id' | 'date'>) => void;
@@ -13,13 +13,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
   const [lane, setLane] = useState<number>(1);
   const [basis, setBasis] = useState<number>(100); // Default set to 100m
   const [isDistanceLocked, setIsDistanceLocked] = useState(true);
-  
+
   // Input mode: 'pace' or 'time'
   const [inputMode, setInputMode] = useState<'pace' | 'time'>('pace');
-  
+
   // Pace inputs (min:sec per km)
   const [paceMins, setPaceMins] = useState<string>('4');
-  const [paceSecs, setPaceSecs] = useState<string>('00.0');
+  const [paceSecs, setPaceSecs] = useState<string>('00');
 
   // Time inputs (total for distance)
   const [inputMins, setInputMins] = useState<string>('3');
@@ -28,11 +28,16 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
   // Logic: Convert Pace/km to Speed (km/h)
   useEffect(() => {
     if (inputMode === 'pace') {
-      const totalSecsPerKm = (parseFloat(paceMins || '0') * 60) + parseFloat(paceSecs || '0');
+      const pm = parseFloat(paceMins) || 0;
+      const ps = parseFloat(paceSecs) || 0;
+      const totalSecsPerKm = (pm * 60) + ps;
+
       if (totalSecsPerKm > 0) {
-        // speed (km/h) = 3600 / totalSecsPerKm
         const speedKmh = 3600 / totalSecsPerKm;
-        setSpeed(parseFloat(speedKmh.toFixed(2)));
+        // Only update if significantly different to avoid loops
+        if (Math.abs(speed - speedKmh) > 0.001) {
+          setSpeed(parseFloat(speedKmh.toFixed(3)));
+        }
       }
     }
   }, [paceMins, paceSecs, inputMode]);
@@ -45,19 +50,24 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
       const totalSeconds = distance / speedMs;
       const tMins = Math.floor(totalSeconds / 60);
       const tSecs = (totalSeconds % 60).toFixed(1);
-      
+
       // Update Pace inputs (sec per km)
-      // Pace (sec/km) = 3600 / speed(km/h)
       const secsPerKm = 3600 / speed;
       const pMins = Math.floor(secsPerKm / 60);
       const pSecs = (secsPerKm % 60).toFixed(1);
 
       if (inputMode === 'time') {
-        setPaceMins(pMins.toString());
-        setPaceSecs(pSecs.padStart(4, '0'));
+        const currentPaceTotal = (parseFloat(paceMins) * 60) + parseFloat(paceSecs);
+        if (Math.abs(currentPaceTotal - secsPerKm) > 0.1) {
+          setPaceMins(pMins.toString());
+          setPaceSecs(pSecs);
+        }
       } else if (inputMode === 'pace') {
-        setInputMins(tMins.toString());
-        setInputSecs(tSecs);
+        const currentTimeTotal = (parseFloat(inputMins) * 60) + parseFloat(inputSecs);
+        if (Math.abs(currentTimeTotal - totalSeconds) > 0.1) {
+          setInputMins(tMins.toString());
+          setInputSecs(tSecs);
+        }
       }
     }
   }, [speed, distance, inputMode]);
@@ -65,11 +75,16 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
   // Logic: Sync Speed when Total Time changes
   useEffect(() => {
     if (inputMode === 'time') {
-      const totalSeconds = (parseFloat(inputMins || '0') * 60) + parseFloat(inputSecs || '0');
+      const im = parseFloat(inputMins) || 0;
+      const is = parseFloat(inputSecs) || 0;
+      const totalSeconds = (im * 60) + is;
+
       if (totalSeconds > 0 && distance > 0) {
         const speedMs = distance / totalSeconds;
         const speedKmh = speedMs * 3.6;
-        setSpeed(parseFloat(speedKmh.toFixed(2)));
+        if (Math.abs(speed - speedKmh) > 0.001) {
+          setSpeed(parseFloat(speedKmh.toFixed(3)));
+        }
       }
     }
   }, [inputMins, inputSecs, distance, inputMode]);
@@ -112,34 +127,34 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
               <span className="material-symbols-outlined text-sm">straighten</span>
               Distance (meters)
             </p>
-            <button 
+            <button
               onClick={() => setIsDistanceLocked(!isDistanceLocked)}
-              className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors ${
-                isDistanceLocked ? 'text-red-500 bg-red-500/10' : 'text-slate-400 bg-slate-800'
-              }`}
+              className={`flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors ${isDistanceLocked ? 'text-red-500 bg-red-500/10' : 'text-slate-400 bg-slate-800'
+                }`}
             >
-              <span className="material-symbols-outlined text-xs">{isDistanceLocked ? 'lock' : 'lock_open'}</span> 
+              <span className="material-symbols-outlined text-xs">{isDistanceLocked ? 'lock' : 'lock_open'}</span>
               {isDistanceLocked ? 'Locked' : 'Unlock'}
             </button>
           </div>
-          <input 
+          <input
             type="number"
             value={distance}
             onChange={(e) => setDistance(Number(e.target.value))}
             readOnly={isDistanceLocked}
+            onFocus={(e) => e.target.select()}
             className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none transition-all"
           />
         </div>
 
         {/* Input Mode Toggle */}
         <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
-          <button 
+          <button
             onClick={() => setInputMode('pace')}
             className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${inputMode === 'pace' ? 'bg-red-600 text-white' : 'text-slate-50'}`}
           >
             By Pacing (/km)
           </button>
-          <button 
+          <button
             onClick={() => setInputMode('time')}
             className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-all ${inputMode === 'time' ? 'bg-red-600 text-white' : 'text-slate-500'}`}
           >
@@ -161,20 +176,22 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
             </div>
             <div className="flex gap-2">
               <div className="flex-1 relative">
-                <input 
+                <input
                   type="number"
                   value={paceMins}
                   onChange={(e) => setPaceMins(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">Min</span>
               </div>
               <div className="flex-1 relative">
-                <input 
+                <input
                   type="number"
                   step="0.1"
                   value={paceSecs}
                   onChange={(e) => setPaceSecs(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">Sec</span>
@@ -194,22 +211,24 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
             </div>
             <div className="flex gap-2">
               <div className="flex-1 relative">
-                <input 
+                <input
                   type="number"
                   placeholder="Min"
                   value={inputMins}
                   onChange={(e) => setInputMins(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">Min</span>
               </div>
               <div className="flex-1 relative">
-                <input 
+                <input
                   type="number"
                   step="0.1"
                   placeholder="Sec"
                   value={inputSecs}
                   onChange={(e) => setInputSecs(e.target.value)}
+                  onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-600 uppercase">Sec</span>
@@ -218,31 +237,34 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
           </div>
         )}
 
-        {/* Lane Selector */}
-        <div>
-          <div className="flex items-center justify-between px-1 mb-3">
-            <h3 className="text-white text-sm font-bold">Track Lane (1-8)</h3>
-            <span className="text-[10px] font-bold bg-slate-800 px-2 py-1 rounded uppercase text-slate-400">Stagger Adjust</span>
+        {/* Lane Selector - Fancy & Compact */}
+        <div className="px-1">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white text-[11px] font-bold uppercase tracking-widest opacity-50">Track Lane</h3>
+            <span className="text-[10px] font-black text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+              {getEffectiveLapDistance(lane).toFixed(1)}m Lap
+            </span>
           </div>
-          <div className="bg-slate-900 p-1.5 rounded-2xl overflow-hidden shadow-inner">
-            <div className="flex gap-2 p-1 overflow-x-auto no-scrollbar">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(l => (
-                <button
-                  key={l}
-                  onClick={() => setLane(l)}
-                  className={`flex flex-col items-center justify-center min-w-[52px] h-14 rounded-xl transition-all duration-200 ${
-                    lane === l 
-                      ? 'bg-white text-red-600 shadow-lg ring-2 ring-white/50' 
-                      : 'bg-white/5 text-white border border-white/10 hover:bg-white/10'
+
+          <div className="flex justify-between items-center bg-slate-900/50 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm shadow-inner">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map(l => (
+              <button
+                key={l}
+                onClick={() => setLane(l)}
+                className={`relative flex items-center justify-center size-9 rounded-xl transition-all duration-300 group ${lane === l
+                    ? 'bg-red-600 text-white shadow-[0_0_15px_rgba(220,38,38,0.4)] scale-110 z-10'
+                    : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
                   }`}
-                >
-                  <span className="text-[9px] font-bold uppercase">L{l}</span>
-                  <span className="text-lg font-black">{l}</span>
-                </button>
-              ))}
-            </div>
+              >
+                <span className="text-sm font-black italic">{l}</span>
+                {lane === l && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 size-1 bg-white rounded-full shadow-[0_0_5px_white]" />
+                )}
+              </button>
+            ))}
           </div>
         </div>
+
 
         {/* Split Times */}
         <div className="mt-8">
@@ -252,14 +274,8 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
               Split Times
             </h3>
             <div className="flex items-center gap-2">
-              <button 
-                onClick={handleSave}
-                className="size-8 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center active:scale-95 transition-transform" 
-                title="Save Result"
-              >
-                <span className="material-symbols-outlined text-lg">save</span>
-              </button>
-              <button 
+              <SaveButton onSave={handleSave} />
+              <button
                 onClick={() => setBasis(basis === 100 ? 200 : 100)}
                 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-2 py-1 rounded hover:bg-slate-700 transition-colors"
               >
@@ -267,7 +283,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
               </button>
             </div>
           </div>
-          
+
           <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-sm mb-4">
             <table className="w-full text-left">
               <thead className="bg-slate-800/50 border-b border-slate-800">
@@ -309,6 +325,34 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave }) => {
         </p>
       </div>
     </div>
+  );
+};
+
+
+interface SaveButtonProps {
+  onSave: () => void;
+}
+
+const SaveButton: React.FC<SaveButtonProps> = ({ onSave }) => {
+  const [saved, setSaved] = useState(false);
+
+  const handleClick = () => {
+    onSave();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${saved ? 'bg-green-500 text-white' : 'bg-red-500/10 text-red-500'
+        }`}
+      title="Save Result"
+    >
+      <span className="material-symbols-outlined text-lg">
+        {saved ? 'check' : 'save'}
+      </span>
+    </button>
   );
 };
 
