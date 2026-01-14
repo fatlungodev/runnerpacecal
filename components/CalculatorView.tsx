@@ -462,7 +462,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({ onSave }) => {
   return (
     <button
       onClick={handleClick}
-      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${saved ? 'bg-green-500 text-white' : 'bg-red-500/10 text-red-500'
+      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${saved ? 'bg-emerald-500 text-white' : 'bg-red-500/10 text-red-500'
         }`}
       title="Save Result"
     >
@@ -495,7 +495,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ getText }) => {
   return (
     <button
       onClick={handleCopy}
-      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-800 text-slate-200'
+      className={`size-8 rounded-full flex items-center justify-center active:scale-95 transition-all duration-300 ${copied ? 'bg-emerald-500 text-white' : 'bg-red-500/10 text-red-500'
         }`}
       title="Copy to clipboard"
     >

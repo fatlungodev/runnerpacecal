@@ -1,5 +1,5 @@
 {
-  "name": "Refined Runner Pacing Calculator",
+  "name": "Track Pacing",
   "description": "A high-end track and field pacing tool that calculates split times across different lanes and allows runners to manage their workout history.",
   "requestFramePermissions": []
 }
