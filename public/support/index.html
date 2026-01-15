@@ -21,6 +21,22 @@
             --success: #10b981;
         }
 
+        [lang="zh"] {
+            display: none;
+        }
+
+        body.lang-zh [lang="en"] {
+            display: none;
+        }
+
+        body.lang-zh [lang="zh"] {
+            display: block;
+        }
+
+        body.lang-zh span[lang="zh"] {
+            display: inline-block;
+        }
+
         @keyframes fadeIn {
             from {
                 opacity: 0;
@@ -69,8 +85,7 @@
         }
 
         header {
-            padding: 1.5rem 2rem;
-            text-align: center;
+            padding: 1rem 2rem;
             border-bottom: 1px solid var(--border);
             background: rgba(5, 11, 24, 0.8);
             backdrop-filter: blur(20px);
@@ -79,26 +94,53 @@
             z-index: 100;
         }
 
+        .header-content {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .logo-container {
             display: flex;
             align-items: center;
-            justify-content: center;
             gap: 1rem;
         }
 
         .logo-container img {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             animation: fadeIn 0.8s ease-out;
         }
 
         h1 {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             font-weight: 800;
             letter-spacing: -0.02em;
             text-transform: uppercase;
+        }
+
+        .lang-toggle {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .lang-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--text-secondary);
         }
 
         main {
@@ -302,18 +344,30 @@
 
 <body>
     <header>
-        <div class="logo-container">
-            <img src="../images/icon.png" alt="Track Pacing Icon">
-            <h1>Track Pacing</h1>
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="../images/icon.png" alt="Track Pacing Icon">
+                <h1>Track Pacing</h1>
+            </div>
+            <button class="lang-toggle" onclick="toggleLanguage()">
+                <span class="material-symbols-outlined" style="font-size: 18px;">language</span>
+                <span lang="en">Switch to 中文</span>
+                <span lang="zh">切换至 English</span>
+            </button>
         </div>
     </header>
 
     <main>
         <section class="hero">
-            <div class="badge">ELEVATE YOUR TRAINING</div>
-            <h2>Running Track Pacing App Support</h2>
-            <p>Precise interval pacing for track runners and coaches. We're here to support your journey to a new PR.
-            </p>
+            <div class="badge">
+                <span lang="en">ELEVATE YOUR TRAINING</span>
+                <span lang="zh">提升你的训练表现</span>
+            </div>
+            <h2 lang="en">Running Track Pacing App Support</h2>
+            <h2 lang="zh">径赛配速计算器 支援服务</h2>
+            <p lang="en">Precise interval pacing for track runners and coaches. We're here to support your journey to a
+                new PR.</p>
+            <p lang="zh">为运动员和教练设计的精确配速计算工具。我们竭诚为您在刷新个人最佳成绩的道路上提供支持。</p>
         </section>
 
         <div class="screenshot-container">
@@ -323,69 +377,132 @@
         <div class="grid">
             <section class="card" style="grid-column: 1 / -1; animation-delay: 0.3s;">
                 <h3>
-                    <div class="icon-circle">📖</div> How to Use Track Pacing
+                    <div class="icon-circle">📖</div>
+                    <span lang="en">How to Use Track Pacing</span>
+                    <span lang="zh">如何使用 Track Pacing</span>
                 </h3>
                 <div class="how-to-grid">
                     <div class="how-to-item">
-                        <div class="badge">1. SELECT MODE</div>
-                        <h4>Distance Base vs Lap Base</h4>
-                        <p>Choose <strong>Distance Base</strong> for standard race distances (800m, 5k, etc.). Use
-                            <strong>Lap Base</strong> to calculate pacing for specific inner or outer track lanes.</p>
+                        <div class="badge">
+                            <span lang="en">1. SELECT MODE</span>
+                            <span lang="zh">1. 选择模式</span>
+                        </div>
+                        <h4 lang="en">Distance Base vs Lap Base</h4>
+                        <h4 lang="zh">按距离 vs 按道次</h4>
+                        <p lang="en">Choose <strong>Distance Base</strong> for standard race distances (800m, 5k, etc.).
+                            Use <strong>Lap Base</strong> to calculate pacing for specific inner or outer track lanes.
+                        </p>
+                        <p lang="zh">标准比赛距离（如800米、5公里）请选择 <strong>按距离</strong>。若需计算不同内、外道次的配速，请使用 <strong>按道次</strong>。
+                        </p>
                     </div>
                     <div class="how-to-item">
-                        <div class="badge">2. DEFINE GOAL</div>
-                        <h4>By Pacing vs By Target Time</h4>
-                        <p>Toggle <strong>By Pacing</strong> to see splits for a specific speed (e.g. 3:45/km). Switch
-                            to <strong>By Target Time</strong> to find the pace needed for a total clock time.</p>
+                        <div class="badge">
+                            <span lang="en">2. DEFINE GOAL</span>
+                            <span lang="zh">2. 设定目标</span>
+                        </div>
+                        <h4 lang="en">By Pacing vs By Target Time</h4>
+                        <h4 lang="zh">按配速 vs 按目标用时</h4>
+                        <p lang="en">Toggle <strong>By Pacing</strong> to see splits for a specific speed (e.g.
+                            3:45/km). Switch to <strong>By Target Time</strong> to find the pace needed for a total
+                            clock time.</p>
+                        <p lang="zh">开启 <strong>按配速</strong> 可查看特定速度（如 3:45/公里）的分段时间。切换至 <strong>按目标用时</strong>
+                            则可计算达成总时长所需的平均配速。</p>
                     </div>
                     <div class="how-to-item">
-                        <div class="badge">3. MANAGE DATA</div>
-                        <h4>Save & Copy</h4>
-                        <p>Tap the <span class="material-symbols-outlined inline-icon">save</span> <strong>Save
-                                Button</strong> to log your splits in History. Use the <span
+                        <div class="badge">
+                            <span lang="en">3. MANAGE DATA</span>
+                            <span lang="zh">3. 数据管理</span>
+                        </div>
+                        <h4 lang="en">Save & Copy</h4>
+                        <h4 lang="zh">保存与复制</h4>
+                        <p lang="en">Tap the <span class="material-symbols-outlined inline-icon">save</span>
+                            <strong>Save Button</strong> to log your splits in History. Use the <span
                                 class="material-symbols-outlined inline-icon">content_copy</span> <strong>Copy
                                 Button</strong> to share plain-text splits with others.</p>
+                        <p lang="zh">点击 <span class="material-symbols-outlined inline-icon">save</span>
+                            <strong>保存按钮</strong> 将结果存入历史记录。点击 <span
+                                class="material-symbols-outlined inline-icon">content_copy</span> <strong>复制按钮</strong>
+                            可快速以纯文本形式分享分段时间。</p>
                     </div>
                 </div>
             </section>
 
             <section class="card" style="animation-delay: 0.5s;">
                 <h3>
-                    <div class="icon-circle">?</div> Get Support
+                    <div class="icon-circle">?</div>
+                    <span lang="en">Get Support</span>
+                    <span lang="zh">获取支援</span>
                 </h3>
-                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Have questions or found a bug? Reach out
-                    to us and we'll get back to you within 24 hours.</p>
+                <p lang="en" style="color: var(--text-secondary); margin-bottom: 2rem;">Have questions or found a bug?
+                    Reach out to us and we'll get back to you within 24 hours.</p>
+                <p lang="zh" style="color: var(--text-secondary); margin-bottom: 2rem;">有任何疑问或发现程式错误？请联系我们，我们将在24小时内回覆。
+                </p>
                 <div class="contact-info">
-                    <p
+                    <p lang="en"
                         style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.5rem;">
                         Direct Email</p>
+                    <p lang="zh"
+                        style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        电子邮箱</p>
                     <a href="mailto:bearking2004@alan4vibe.com" class="contact-link">bearking2004@alan4vibe.com</a>
                 </div>
             </section>
 
             <section class="card" style="animation-delay: 0.5s;">
                 <h3>
-                    <div class="icon-circle">🔒</div> Privacy Policy
+                    <div class="icon-circle">🔒</div>
+                    <span lang="en">Privacy Policy</span>
+                    <span lang="zh">隐私政策</span>
                 </h3>
                 <div class="privacy-content">
-                    <p><strong>Your data belongs to you.</strong> Track Pacing is designed with privacy at its core.</p>
-                    <ul>
+                    <p lang="en"><strong>Your data belongs to you.</strong> Track Pacing is designed with privacy at its
+                        core.</p>
+                    <p lang="zh"><strong>您的数据完全属于您。</strong> Privacy (隐私) 是 Track Pacing 的核心设计原则。</p>
+                    <ul lang="en">
                         <li><strong>No Data Collection:</strong> We do not collect, store, or share any personal
                             information.</li>
                         <li><strong>Offline First:</strong> All your calculations and history are stored locally on your
                             device.</li>
                         <li><strong>No Tracking:</strong> We don't use any trackers or third-party analytics.</li>
                     </ul>
-                    <p>Simple, clean, and private. Just the way it should be.</p>
+                    <ul lang="zh">
+                        <li><strong>无数据收集：</strong> 我们不会收集、储存或分享任何个人资讯。</li>
+                        <li><strong>离线优先：</strong> 所有计算结果与历史记录均仅储存在您的本地设备上。</li>
+                        <li><strong>无追踪：</strong> 我们不使用任何追踪器或第三方分析工具。</li>
+                    </ul>
+                    <p lang="en">Simple, clean, and private. Just the way it should be.</p>
+                    <p lang="zh">简约、纯粹、私密。这就是工具应有的样子。</p>
                 </div>
             </section>
         </div>
     </main>
 
     <footer>
-        <p>&copy; 2026 Track Pacing. All rights reserved.</p>
-        <p style="margin-top: 0.5rem; opacity: 0.5;">Developed by Alan Leung in Hong Kong</p>
+        <p lang="en">&copy; 2026 Track Pacing. All rights reserved.</p>
+        <p lang="zh">&copy; 2026 Track Pacing. 版权所有。</p>
+        <p style="margin-top: 0.5rem; opacity: 0.5;">
+            <span lang="en">Developed by Alan Leung in Hong Kong</span>
+            <span lang="zh">由 Alan Leung 在香港开发</span>
+        </p>
     </footer>
+
+    <script>
+        function setLanguage(lang) {
+            document.body.classList.remove('lang-en', 'lang-zh');
+            document.body.classList.add('lang-' + lang);
+            localStorage.setItem('preferred-lang', lang);
+        }
+
+        function toggleLanguage() {
+            const current = localStorage.getItem('preferred-lang') || 'en';
+            setLanguage(current === 'en' ? 'zh' : 'en');
+        }
+
+        // Initialize from local storage or browser language
+        const savedLang = localStorage.getItem('preferred-lang');
+        const browserLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+        setLanguage(savedLang || browserLang);
+    </script>
 </body>
 
 </html>
