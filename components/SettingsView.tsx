@@ -96,7 +96,8 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onClearHistory }) =
 
                     <div className="mt-12 text-center">
                         <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest mb-1">Track Pacing v1.0.0</p>
-                        <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest mb-4">Author: Alan Leung 🇭🇰</p>
+                        <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest mb-1">Author: Alan Leung 🇭🇰</p>
+                        <p className="text-slate-700 text-[9px] mb-4">Copyright © 2026 Alan Leung. All rights reserved.</p>
                         <p className="text-slate-700 text-[9px] px-10 leading-relaxed">
                             Designed for performance-focused athletes and coaches who demand precision on the track.
                         </p>
