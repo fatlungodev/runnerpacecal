@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Capacitor } from '@capacitor/core';
 
 interface SettingsViewProps {
     onBack: () => void;
@@ -57,37 +58,41 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onClearHistory }) =
                         </button>
                     </div>
 
-                    <h4 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest px-2 pt-4">Support the Project</h4>
-                    <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                        <button
-                            onClick={async () => {
-                                try {
-                                    const { NativePurchases } = await import('@capgo/native-purchases');
-                                    await NativePurchases.purchaseProduct({
-                                        productIdentifier: '001',
-                                        planIdentifier: null,
-                                        quantity: 1,
-                                    });
-                                    alert('Thank you for your donation!');
-                                } catch (e: any) {
-                                    console.error('Purchase failed', e);
-                                    if (e.message !== 'Purchase cancelled') {
-                                        alert('Donation failed. Please try again later.');
-                                    }
-                                }
-                            }}
-                            className="w-full p-4 flex items-center justify-between text-white hover:bg-white/5 transition-colors group"
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className="material-symbols-outlined text-amber-500 group-hover:scale-110 transition-transform">favorite</span>
-                                <div className="flex flex-col items-start text-left">
-                                    <span className="text-sm font-bold">Donate to Track Pacing</span>
-                                    <span className="text-[10px] text-slate-500 uppercase font-black">One-time Support</span>
-                                </div>
+                    {Capacitor.getPlatform() === 'ios' && (
+                        <>
+                            <h4 className="text-slate-500 text-[10px] font-bold uppercase tracking-widest px-2 pt-4">Support the Project</h4>
+                            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const { NativePurchases } = await import('@capgo/native-purchases');
+                                            await NativePurchases.purchaseProduct({
+                                                productIdentifier: '001',
+                                                planIdentifier: null,
+                                                quantity: 1,
+                                            });
+                                            alert('Thank you for your donation!');
+                                        } catch (e: any) {
+                                            console.error('Purchase failed', e);
+                                            if (e.message !== 'Purchase cancelled') {
+                                                alert('Donation failed. Please try again later.');
+                                            }
+                                        }
+                                    }}
+                                    className="w-full p-4 flex items-center justify-between text-white hover:bg-white/5 transition-colors group"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <span className="material-symbols-outlined text-amber-500 group-hover:scale-110 transition-transform">favorite</span>
+                                        <div className="flex flex-col items-start text-left">
+                                            <span className="text-sm font-bold">Donate to Track Pacing</span>
+                                            <span className="text-[10px] text-slate-500 uppercase font-black">One-time Support</span>
+                                        </div>
+                                    </div>
+                                    <span className="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
+                                </button>
                             </div>
-                            <span className="material-symbols-outlined text-slate-500 group-hover:translate-x-1 transition-transform">chevron_right</span>
-                        </button>
-                    </div>
+                        </>
+                    )}
 
                     <div className="mt-12 text-center">
                         <p className="text-slate-600 text-[10px] uppercase font-bold tracking-widest mb-1">Track Pacing v1.0.0</p>
