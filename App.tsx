@@ -70,7 +70,7 @@ const App: React.FC = () => {
       <div className="w-full max-w-[402px] min-h-screen flex flex-col bg-slate-950 relative border-x border-slate-900 shadow-2xl">
 
         {/* Main Content - Padded for Dynamic Island and Bottom Bar */}
-        <div className="flex-1 overflow-y-auto no-scrollbar pt-12 pb-32">
+        <div className="flex-1 overflow-y-auto no-scrollbar pt-0 pb-32">
           {currentView === 'calculator' && (
             <CalculatorView onSave={saveRun} sessionData={sessionData} onClearSession={() => setSessionData(null)} />
           )}
@@ -92,7 +92,7 @@ const App: React.FC = () => {
         </div>
 
         {/* Navigation Bar - Balanced for Home Indicator */}
-        <div className="fixed bottom-0 w-full max-w-[402px] px-6 pb-10 pt-2 pointer-events-none z-50">
+        <div className="fixed bottom-0 w-full max-w-[402px] px-6 pb-6 safe-bottom pointer-events-none z-50">
           <div className="bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-3xl h-20 flex items-center justify-around px-4 pointer-events-auto shadow-2xl">
             <NavItem
               active={currentView === 'calculator'}

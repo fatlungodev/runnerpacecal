@@ -9,7 +9,7 @@ interface SettingsViewProps {
 const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onClearHistory }) => {
     return (
         <div className="flex flex-col h-full bg-slate-950">
-            <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-900 pt-8">
+            <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-900 safe-top">
                 <div className="flex items-center p-4 pb-2 justify-between">
                     <button onClick={onBack} className="text-white flex size-12 shrink-0 items-center justify-start">
                         <span className="material-symbols-outlined">arrow_back_ios</span>

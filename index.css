@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+    --font-lexend: "Lexend", sans-serif;
+}
+
+@layer base {
+    body {
+        font-family: var(--font-lexend);
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@layer utilities {
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .safe-top {
+        padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}

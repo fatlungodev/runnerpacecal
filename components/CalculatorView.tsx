@@ -186,7 +186,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center bg-slate-950 p-4 pb-2 justify-between sticky top-0 z-20 border-b border-slate-900">
+      <div className="flex items-center bg-slate-950 p-4 pb-2 justify-between sticky top-0 z-20 border-b border-slate-900 safe-top">
         <div className="text-red-600 flex size-10 shrink-0 items-center justify-center">
           <span className="material-symbols-outlined">directions_run</span>
         </div>
