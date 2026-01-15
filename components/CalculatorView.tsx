@@ -279,8 +279,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                 <span className="material-symbols-outlined text-sm">speed</span>
                 Pacing (min:sec/km)
               </p>
-              <div className="text-[10px] font-bold text-slate-500 uppercase">
-                {speed.toFixed(1)} km/h
+              <div className="flex flex-col items-end">
+                <div className="text-[10px] font-bold text-slate-500 uppercase">
+                  {speed.toFixed(1)} km/h
+                </div>
+                <div className="text-[10px] font-bold text-red-500 uppercase">
+                  {inputMins}:{parseFloat(inputSecs) < 10 ? '0' : ''}{parseFloat(inputSecs || '0').toFixed(1)} Total
+                </div>
               </div>
             </div>
             <div className="flex gap-2">
