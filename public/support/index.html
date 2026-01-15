@@ -7,6 +7,8 @@
     <title>Support & Privacy - Track Pacing</title>
     <meta name="description"
         content="Support and Privacy policy for Track Pacing - The track interval pacing calculator for runners and coaches.">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <style>
         :root {
             --bg-color: #050b18;
@@ -259,6 +261,42 @@
             font-weight: 700;
             margin-bottom: 1rem;
         }
+
+        .how-to-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .how-to-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .how-to-item h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: #fff;
+        }
+
+        .how-to-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .how-to-item strong {
+            color: #fff;
+        }
+
+        .inline-icon {
+            font-size: 18px;
+            vertical-align: middle;
+            color: var(--accent);
+            margin: 0 2px;
+        }
     </style>
 </head>
 
@@ -283,7 +321,35 @@
         </div>
 
         <div class="grid">
-            <section class="card">
+            <section class="card" style="grid-column: 1 / -1; animation-delay: 0.3s;">
+                <h3>
+                    <div class="icon-circle">📖</div> How to Use Track Pacing
+                </h3>
+                <div class="how-to-grid">
+                    <div class="how-to-item">
+                        <div class="badge">1. SELECT MODE</div>
+                        <h4>Distance Base vs Lap Base</h4>
+                        <p>Choose <strong>Distance Base</strong> for standard race distances (800m, 5k, etc.). Use
+                            <strong>Lap Base</strong> to calculate pacing for specific inner or outer track lanes.</p>
+                    </div>
+                    <div class="how-to-item">
+                        <div class="badge">2. DEFINE GOAL</div>
+                        <h4>By Pacing vs By Target Time</h4>
+                        <p>Toggle <strong>By Pacing</strong> to see splits for a specific speed (e.g. 3:45/km). Switch
+                            to <strong>By Target Time</strong> to find the pace needed for a total clock time.</p>
+                    </div>
+                    <div class="how-to-item">
+                        <div class="badge">3. MANAGE DATA</div>
+                        <h4>Save & Copy</h4>
+                        <p>Tap the <span class="material-symbols-outlined inline-icon">save</span> <strong>Save
+                                Button</strong> to log your splits in History. Use the <span
+                                class="material-symbols-outlined inline-icon">content_copy</span> <strong>Copy
+                                Button</strong> to share plain-text splits with others.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" style="animation-delay: 0.5s;">
                 <h3>
                     <div class="icon-circle">?</div> Get Support
                 </h3>
@@ -297,7 +363,7 @@
                 </div>
             </section>
 
-            <section class="card">
+            <section class="card" style="animation-delay: 0.5s;">
                 <h3>
                     <div class="icon-circle">🔒</div> Privacy Policy
                 </h3>
