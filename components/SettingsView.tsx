@@ -84,7 +84,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ onBack, onClearHistory }) =
                                     <div className="flex items-center gap-3">
                                         <span className="material-symbols-outlined text-amber-500 group-hover:scale-110 transition-transform">favorite</span>
                                         <div className="flex flex-col items-start text-left">
-                                            <span className="text-sm font-bold">Donate to Track Pacing</span>
+                                            <span className="text-sm font-bold">Sponsor the Track Pacing Author</span>
                                             <span className="text-[10px] text-slate-500 uppercase font-black">One-time Support</span>
                                         </div>
                                     </div>
