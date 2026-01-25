@@ -1,6 +1,7 @@
 
 export interface Split {
   mark: number;
+  label?: string;
   interval: number;
   running: number;
 }

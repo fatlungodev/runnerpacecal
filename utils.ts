@@ -26,25 +26,70 @@ export const getLaneAdjustmentFactor = (lane: number): number => {
 export const calculateSplits = (distance: number, speedKmh: number, lane: number, basis: number = 200): any[] => {
   const speedMs = (speedKmh * 1000) / 3600;
   const adjustment = getLaneAdjustmentFactor(lane);
+  const lapDistance = getEffectiveLapDistance(lane);
 
   const splits = [];
-  let currentMark = 0;
-
-  // Create split points
-  const marks = [];
-  for (let m = basis; m < distance; m += basis) {
-    marks.push(m);
+  
+  // Create split points based on lap fractions (1/4, 1/2, 3/4, 1 lap)
+  const lapFractions = [0.25, 0.5, 0.75, 1.0];
+  const marks: Array<{ mark: number; label: string }> = [];
+  
+  let lapNumber = 0;
+  
+  while (true) {
+    for (const fraction of lapFractions) {
+      const markDistance = lapNumber * lapDistance + fraction * lapDistance;
+      
+      if (markDistance > distance) {
+        break;
+      }
+      
+      // Determine label
+      let label = '';
+      if (lapNumber === 0) {
+        if (fraction === 0.25) label = '1/4 lap';
+        else if (fraction === 0.5) label = '1/2 lap';
+        else if (fraction === 0.75) label = '3/4 lap';
+        else if (fraction === 1.0) label = '1 lap';
+      } else {
+        if (fraction === 0.25) label = `${lapNumber + 0.25} lap`;
+        else if (fraction === 0.5) label = `${lapNumber + 0.5} lap`;
+        else if (fraction === 0.75) label = `${lapNumber + 0.75} lap`;
+        else if (fraction === 1.0) label = `${lapNumber + 1} lap`;
+      }
+      
+      marks.push({
+        mark: parseFloat(markDistance.toFixed(1)),
+        label: label
+      });
+    }
+    
+    lapNumber++;
+    
+    // Check if we've exceeded the distance
+    if (lapNumber * lapDistance >= distance) {
+      break;
+    }
   }
-  marks.push(distance);
+  
+  // Always add the finish line if it's not already included
+  const lastMark = marks[marks.length - 1];
+  if (!lastMark || Math.abs(lastMark.mark - distance) > 0.1) {
+    marks.push({
+      mark: distance,
+      label: 'Finish'
+    });
+  }
 
-  marks.forEach(mark => {
-    // Total adjusted distance for this mark
-    const adjustedMark = mark * adjustment;
-    const runningTime = adjustedMark / speedMs;
+  marks.forEach(({ mark, label }) => {
+    // mark is already the adjusted distance based on lane (from lapDistance calculation)
+    // So we use it directly without multiplying by adjustment again
+    const runningTime = mark / speedMs;
     const intervalTime = runningTime - (splits.length > 0 ? splits[splits.length - 1].running : 0);
 
     splits.push({
       mark,
+      label: label || `${mark}m`,
       interval: intervalTime,
       running: runningTime
     });

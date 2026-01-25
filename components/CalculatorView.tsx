@@ -9,11 +9,30 @@ interface CalculatorViewProps {
   onClearSession: () => void;
 }
 
+// App version for tracking what's new dialog
+const APP_VERSION = '2.0.0';
+const VERSION_STORAGE_KEY = 'runnerpacecal_version_seen';
+
 const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, onClearSession }) => {
   const [distance, setDistance] = useState<number>(800);
   const [speed, setSpeed] = useState<number>(15.0); // Internal state kept as km/h
   const [lane, setLane] = useState<number>(1);
-  const [basis, setBasis] = useState<number>(100); // Default set to 100m
+  const [showUpdateDialog, setShowUpdateDialog] = useState<boolean>(false);
+
+  // Check if this is first launch or new version on mount
+  useEffect(() => {
+    const seenVersion = localStorage.getItem(VERSION_STORAGE_KEY);
+    if (seenVersion !== APP_VERSION) {
+      // Show dialog for first-time users or users on new version
+      setShowUpdateDialog(true);
+    }
+  }, []);
+
+  // Handle closing the update dialog and save version
+  const handleCloseUpdateDialog = () => {
+    setShowUpdateDialog(false);
+    localStorage.setItem(VERSION_STORAGE_KEY, APP_VERSION);
+  };
 
 
   // Input mode: 'pace' or 'time'
@@ -135,8 +154,8 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
   }, [inputMins, inputSecs, distance, inputMode]);
 
   const splits = useMemo(() => {
-    return calculateSplits(distance, speed, lane, basis);
-  }, [distance, speed, lane, basis]);
+    return calculateSplits(distance, speed, lane, 0); // basis parameter no longer used, kept for compatibility
+  }, [distance, speed, lane]);
 
   const buildShareText = () => {
     if (!splits.length) return 'No pacing data calculated.';
@@ -161,11 +180,11 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
 
     const splitsText = splits
       .map((s, index) => {
-        const mark = `${s.mark}m`;
+        const markLabel = s.label || `${s.mark}m`;
         const interval = `${s.interval.toFixed(2)}s`;
         const running = formatTimeWithMs(s.running);
         const finishFlag = index === splits.length - 1 ? ' (Finish)' : '';
-        return `${mark}: interval ${interval}, running ${running}${finishFlag}`;
+        return `${markLabel} (${s.mark.toFixed(1)}m): interval ${interval}, running ${running}${finishFlag}`;
       })
       .join('\n');
 
@@ -192,8 +211,12 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
         </div>
         <h2 className="text-white text-lg font-bold leading-tight tracking-tight flex-1 text-center">Track Pacing</h2>
         <div className="size-10 flex items-center justify-center">
-          <button className="size-8 rounded-full bg-slate-900 flex items-center justify-center text-slate-400">
-            <span className="material-symbols-outlined text-xl">settings</span>
+          <button
+            onClick={() => setShowUpdateDialog(true)}
+            className="size-8 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="What's New"
+          >
+            <span className="material-symbols-outlined text-xl">help</span>
           </button>
         </div>
       </div>
@@ -397,12 +420,6 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
             <div className="flex items-center gap-2">
               <SaveButton onSave={handleSave} />
               <CopyButton getText={buildShareText} />
-              <button
-                onClick={() => setBasis(basis === 100 ? 200 : 100)}
-                className="text-[10px] font-bold text-slate-400 uppercase tracking-widest bg-slate-800 px-2 py-1 rounded hover:bg-slate-700 transition-colors"
-              >
-                {basis}m Basis
-              </button>
             </div>
           </div>
 
@@ -422,7 +439,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                     <tr key={split.mark} className={isLast ? 'bg-red-500/5' : ''}>
                       <td className="px-4 py-4">
                         <div className="flex flex-col">
-                          <span className="text-sm font-bold text-white">{split.mark}m</span>
+                          <span className="text-sm font-bold text-white">{split.label || `${split.mark}m`}</span>
+                          {split.label && (
+                            <span className="text-xs text-slate-500 font-medium">{split.mark.toFixed(1)}m</span>
+                          )}
                           {isLast && <span className="text-[9px] uppercase font-bold text-red-500">Finish</span>}
                         </div>
                       </td>
@@ -446,6 +466,74 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
           Calculated for Lane {lane} on a standard 400m track. Pacing is based on time per kilometer.
         </p>
       </div>
+
+      {/* Update Dialog */}
+      {showUpdateDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={handleCloseUpdateDialog}>
+          <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl max-w-md w-full mx-4 max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-slate-800">
+              <h3 className="text-white text-xl font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-red-600">new_releases</span>
+                What's New
+              </h3>
+              <button
+                onClick={handleCloseUpdateDialog}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="text-red-600">•</span>
+                    Lap-Based Split Times
+                  </h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Split times are now calculated based on lap fractions (1/4 lap, 1/2 lap, 3/4 lap, 1 lap) instead of fixed distances. This provides more intuitive pacing markers for track runners.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="text-red-600">•</span>
+                    Lane-Specific Calculations
+                  </h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    All calculations now automatically account for lane differences. Each lane's lap distance is precisely calculated based on standard track geometry (1.22m lane width).
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="text-red-600">•</span>
+                    Copy to Clipboard
+                  </h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Share your pacing results easily! Use the copy button next to the save button to copy all split times and share via WhatsApp or other messaging apps.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
+                    <span className="text-red-600">•</span>
+                    Improved Accuracy
+                  </h4>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    Fixed calculation issues to ensure accurate split times for all lanes. Target times and pacing are now perfectly synchronized.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-800">
+              <button
+                onClick={handleCloseUpdateDialog}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors"
+              >
+                Got it!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
