@@ -32,6 +32,18 @@ dist-ssr
 *.cer
 *.jks
 *.keystore
+*.pem
+*.key
+*.crt
+secrets.*
+credentials.*
+auth.*
+token.*
+api-key*
+api_key*
+*.local
+*.db
+*.sqlite
 
 # Xcode
 ios/App/App.xcodeproj/project.xcworkspace/xcuserdata/
