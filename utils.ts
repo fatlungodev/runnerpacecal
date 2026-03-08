@@ -1,38 +1,61 @@
 
+const normalizeSeconds = (seconds: number): number => {
+  if (!Number.isFinite(seconds)) return 0;
+  return Math.max(0, seconds);
+};
+
+const normalizeDistance = (distance: number): number => {
+  if (!Number.isFinite(distance)) return 0;
+  return Math.max(0, distance);
+};
+
+const splitToTenths = (seconds: number): { mins: number; secs: string } => {
+  const totalTenths = Math.round(normalizeSeconds(seconds) * 10);
+  const mins = Math.floor(totalTenths / 600);
+  const secsTenths = totalTenths % 600;
+  const secs = (secsTenths / 10).toFixed(1).padStart(4, '0');
+  return { mins, secs };
+};
+
 export const formatTime = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = (seconds % 60).toFixed(1);
-  return `${mins.toString().padStart(2, '0')}:${secs.padStart(4, '0')}`;
+  const { mins, secs } = splitToTenths(seconds);
+  return `${mins.toString().padStart(2, '0')}:${secs}`;
 };
 
 export const formatTimeWithMs = (seconds: number): string => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  const ms = Math.floor((seconds % 1) * 100);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+  const totalHundredths = Math.round(normalizeSeconds(seconds) * 100);
+  const mins = Math.floor(totalHundredths / 6000);
+  const secs = Math.floor((totalHundredths % 6000) / 100);
+  const hundredths = totalHundredths % 100;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
 };
 
 // Lane 1 = 400m
 // Standard lane width is 1.22m
 // Stagger formula: 2 * pi * (lane - 1) * 1.22
 export const getLaneAdjustmentFactor = (lane: number): number => {
-  if (lane === 1) return 1;
+  const safeLane = Math.max(1, Math.round(Number.isFinite(lane) ? lane : 1));
+  if (safeLane === 1) return 1;
   const L1 = 400;
   const laneWidth = 1.22;
-  const laneDistance = L1 + 2 * Math.PI * (lane - 1) * laneWidth;
+  const laneDistance = L1 + 2 * Math.PI * (safeLane - 1) * laneWidth;
   return laneDistance / L1;
 };
 
 export const calculateSplits = (distance: number, speedKmh: number, lane: number, basis: number = 200): any[] => {
-  const speedMs = (speedKmh * 1000) / 3600;
-  const adjustment = getLaneAdjustmentFactor(lane);
+  const safeDistance = normalizeDistance(distance);
+  const safeSpeedKmh = Number.isFinite(speedKmh) ? speedKmh : 0;
+  const speedMs = (safeSpeedKmh * 1000) / 3600;
+  if (speedMs <= 0 || safeDistance <= 0) return [];
+
   const lapDistance = getEffectiveLapDistance(lane);
+  const roundedDistance = parseFloat(safeDistance.toFixed(1));
 
   const splits = [];
   
   // Create split points based on lap fractions (1/4, 1/2, 3/4, 1 lap)
   const lapFractions = [0.25, 0.5, 0.75, 1.0];
-  const marks: Array<{ mark: number; label: string }> = [];
+  const marks: Array<{ mark: number; timingDistance: number; label: string }> = [];
   
   let lapNumber = 0;
   
@@ -40,7 +63,7 @@ export const calculateSplits = (distance: number, speedKmh: number, lane: number
     for (const fraction of lapFractions) {
       const markDistance = lapNumber * lapDistance + fraction * lapDistance;
       
-      if (markDistance > distance) {
+      if (markDistance > safeDistance) {
         break;
       }
       
@@ -60,6 +83,7 @@ export const calculateSplits = (distance: number, speedKmh: number, lane: number
       
       marks.push({
         mark: parseFloat(markDistance.toFixed(1)),
+        timingDistance: markDistance,
         label: label
       });
     }
@@ -67,24 +91,34 @@ export const calculateSplits = (distance: number, speedKmh: number, lane: number
     lapNumber++;
     
     // Check if we've exceeded the distance
-    if (lapNumber * lapDistance >= distance) {
+    if (lapNumber * lapDistance >= safeDistance) {
       break;
     }
   }
   
-  // Always add the finish line if it's not already included
+  // Always preserve exact finish timing while preventing duplicate visible marks.
   const lastMark = marks[marks.length - 1];
-  if (!lastMark || Math.abs(lastMark.mark - distance) > 0.1) {
+  if (!lastMark) {
     marks.push({
-      mark: distance,
+      mark: roundedDistance,
+      timingDistance: safeDistance,
       label: 'Finish'
     });
+  } else if (Math.abs(lastMark.timingDistance - safeDistance) > 0.000001) {
+    if (Math.abs(lastMark.mark - roundedDistance) < 0.000001) {
+      lastMark.timingDistance = safeDistance;
+      lastMark.label = 'Finish';
+    } else {
+      marks.push({
+        mark: roundedDistance,
+        timingDistance: safeDistance,
+        label: 'Finish'
+      });
+    }
   }
 
-  marks.forEach(({ mark, label }) => {
-    // mark is already the adjusted distance based on lane (from lapDistance calculation)
-    // So we use it directly without multiplying by adjustment again
-    const runningTime = mark / speedMs;
+  marks.forEach(({ mark, timingDistance, label }) => {
+    const runningTime = timingDistance / speedMs;
     const intervalTime = runningTime - (splits.length > 0 ? splits[splits.length - 1].running : 0);
 
     splits.push({

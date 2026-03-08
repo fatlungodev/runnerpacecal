@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { RunHistory } from '../types';
-import { calculateSplits, formatTime, formatTimeWithMs, getEffectiveLapDistance } from '../utils';
+import { RunHistory, Split } from '../types';
+import { calculateSplits, formatTimeWithMs, getEffectiveLapDistance } from '../utils';
 
 interface CalculatorViewProps {
   onSave: (run: Omit<RunHistory, 'id' | 'date'>) => void;
@@ -10,7 +10,7 @@ interface CalculatorViewProps {
 }
 
 // App version for tracking what's new dialog
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const VERSION_STORAGE_KEY = 'runnerpacecal_version_seen';
 
 const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, onClearSession }) => {
@@ -49,11 +49,33 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
   // Calculation Basis: 'distance' or 'laps'
   const [calcBasis, setCalcBasis] = useState<'distance' | 'laps'>('distance');
   const [laps, setLaps] = useState<string>('2'); // Using string for better input handling
+  const [distanceUnit, setDistanceUnit] = useState<'meter' | 'km'>('meter');
+  const [splitGranularity, setSplitGranularity] = useState<1 | 0.5 | 0.25>(0.25);
+  
+  const toMinuteSecondParts = (totalSeconds: number): { mins: number; secs: string } => {
+    const safeSeconds = Number.isFinite(totalSeconds) ? Math.max(0, totalSeconds) : 0;
+    const totalTenths = Math.round(safeSeconds * 10);
+    const mins = Math.floor(totalTenths / 600);
+    const secs = ((totalTenths % 600) / 10).toFixed(1).padStart(4, '0');
+    return { mins, secs };
+  };
+
+  const formatMinSec = (totalSeconds: number): string => {
+    const { mins, secs } = toMinuteSecondParts(totalSeconds);
+    return `${mins}:${secs}`;
+  };
+
+  const normalizeNonNegativeInput = (value: string): string => {
+    if (value === '') return '';
+    const numericValue = parseFloat(value);
+    if (Number.isNaN(numericValue)) return '';
+    return numericValue < 0 ? '0' : value;
+  };
 
   // Sync Distance from Laps when in 'laps' mode
   useEffect(() => {
     if (calcBasis === 'laps') {
-      const lapCount = parseFloat(laps) || 0;
+      const lapCount = Math.max(0, parseFloat(laps) || 0);
       if (lapCount > 0) {
         const lapDist = getEffectiveLapDistance(lane);
         const newDist = lapCount * lapDist;
@@ -71,18 +93,16 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
 
       // Calculate pace from speed
       const secsPerKm = 3600 / sessionData.speed;
-      const pMins = Math.floor(secsPerKm / 60);
-      const pSecs = (secsPerKm % 60).toFixed(1);
-      setPaceMins(pMins.toString());
-      setPaceSecs(pSecs);
+      const pace = toMinuteSecondParts(secsPerKm);
+      setPaceMins(pace.mins.toString());
+      setPaceSecs(pace.secs);
 
       // Calculate total time
       const speedMs = (sessionData.speed * 1000) / 3600;
       const totalSeconds = sessionData.distance / speedMs;
-      const tMins = Math.floor(totalSeconds / 60);
-      const tSecs = (totalSeconds % 60).toFixed(1);
-      setInputMins(tMins.toString());
-      setInputSecs(tSecs);
+      const total = toMinuteSecondParts(totalSeconds);
+      setInputMins(total.mins.toString());
+      setInputSecs(total.secs);
 
       // Clear the session data after loading
       onClearSession();
@@ -92,8 +112,8 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
   // Logic: Convert Pace/km to Speed (km/h)
   useEffect(() => {
     if (inputMode === 'pace') {
-      const pm = parseFloat(paceMins) || 0;
-      const ps = parseFloat(paceSecs) || 0;
+      const pm = Math.max(0, parseFloat(paceMins) || 0);
+      const ps = Math.max(0, parseFloat(paceSecs) || 0);
       const totalSecsPerKm = (pm * 60) + ps;
 
       if (totalSecsPerKm > 0) {
@@ -112,25 +132,23 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
     if (speedMs > 0) {
       // Update Total Time inputs
       const totalSeconds = distance / speedMs;
-      const tMins = Math.floor(totalSeconds / 60);
-      const tSecs = (totalSeconds % 60).toFixed(1);
+      const total = toMinuteSecondParts(totalSeconds);
 
       // Update Pace inputs (sec per km)
       const secsPerKm = 3600 / speed;
-      const pMins = Math.floor(secsPerKm / 60);
-      const pSecs = (secsPerKm % 60).toFixed(1);
+      const pace = toMinuteSecondParts(secsPerKm);
 
       if (inputMode === 'time') {
         const currentPaceTotal = (parseFloat(paceMins) * 60) + parseFloat(paceSecs);
         if (Math.abs(currentPaceTotal - secsPerKm) > 0.1) {
-          setPaceMins(pMins.toString());
-          setPaceSecs(pSecs);
+          setPaceMins(pace.mins.toString());
+          setPaceSecs(pace.secs);
         }
       } else if (inputMode === 'pace') {
         const currentTimeTotal = (parseFloat(inputMins) * 60) + parseFloat(inputSecs);
         if (Math.abs(currentTimeTotal - totalSeconds) > 0.1) {
-          setInputMins(tMins.toString());
-          setInputSecs(tSecs);
+          setInputMins(total.mins.toString());
+          setInputSecs(total.secs);
         }
       }
     }
@@ -139,8 +157,8 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
   // Logic: Sync Speed when Total Time changes
   useEffect(() => {
     if (inputMode === 'time') {
-      const im = parseFloat(inputMins) || 0;
-      const is = parseFloat(inputSecs) || 0;
+      const im = Math.max(0, parseFloat(inputMins) || 0);
+      const is = Math.max(0, parseFloat(inputSecs) || 0);
       const totalSeconds = (im * 60) + is;
 
       if (totalSeconds > 0 && distance > 0) {
@@ -153,37 +171,71 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
     }
   }, [inputMins, inputSecs, distance, inputMode]);
 
+  const effectiveLane = calcBasis === 'laps' ? lane : 1;
+
   const splits = useMemo(() => {
-    return calculateSplits(distance, speed, lane, 0); // basis parameter no longer used, kept for compatibility
-  }, [distance, speed, lane]);
+    return calculateSplits(distance, speed, effectiveLane, 0); // basis parameter no longer used, kept for compatibility
+  }, [distance, speed, effectiveLane]);
+
+  const splitGranularityLabel = splitGranularity === 1 ? '1 lap' : splitGranularity === 0.5 ? '1/2 lap' : '1/4 lap';
+  const splitGranularityButtonLabel = splitGranularity === 1 ? '1' : splitGranularity === 0.5 ? '1/2' : '1/4';
+
+  const cycleSplitGranularity = () => {
+    setSplitGranularity((prev) => {
+      if (prev === 0.25) return 0.5;
+      if (prev === 0.5) return 1;
+      return 0.25;
+    });
+  };
+
+  const visibleSplits = useMemo((): Split[] => {
+    if (!splits.length) return [];
+
+    const lapDistance = getEffectiveLapDistance(effectiveLane);
+    const tolerance = 0.02;
+    const lastIndex = splits.length - 1;
+
+    const filteredSplits = splits.filter((split, index) => {
+      if (index === lastIndex) return true;
+      const lapsCovered = split.mark / lapDistance;
+      const nearestStep = Math.round(lapsCovered / splitGranularity) * splitGranularity;
+      return Math.abs(lapsCovered - nearestStep) <= tolerance;
+    });
+
+    let previousRunning = 0;
+    return filteredSplits.map((split) => {
+      const interval = split.running - previousRunning;
+      previousRunning = split.running;
+      return { ...split, interval };
+    });
+  }, [splits, splitGranularity, effectiveLane]);
 
   const buildShareText = () => {
-    if (!splits.length) return 'No pacing data calculated.';
+    if (!visibleSplits.length) return 'No pacing data calculated.';
 
-    const lastSplit = splits[splits.length - 1];
+    const lastSplit = visibleSplits[visibleSplits.length - 1];
     const totalTime = formatTimeWithMs(lastSplit.running);
 
     const pacePerKmSeconds = 3600 / speed;
-    const paceMinutes = Math.floor(pacePerKmSeconds / 60);
-    const paceSeconds = (pacePerKmSeconds % 60).toFixed(1);
-    const paceText = `${paceMinutes}:${parseFloat(paceSeconds) < 10 ? '0' : ''}${paceSeconds} /km`;
+    const paceText = `${formatMinSec(pacePerKmSeconds)} /km`;
 
     const header = [
       'Track Pacing Result',
       `Distance: ${distance.toFixed(1)}m`,
-      `Lane: ${lane}`,
+      `Lane: ${effectiveLane}`,
       `Total Time: ${totalTime}`,
       `Pacing: ${paceText}`,
+      `Split Display: ${splitGranularityLabel}`,
       '',
       'Splits:'
     ].join('\n');
 
-    const splitsText = splits
+    const splitsText = visibleSplits
       .map((s, index) => {
         const markLabel = s.label || `${s.mark}m`;
         const interval = `${s.interval.toFixed(2)}s`;
         const running = formatTimeWithMs(s.running);
-        const finishFlag = index === splits.length - 1 ? ' (Finish)' : '';
+        const finishFlag = index === visibleSplits.length - 1 ? ' (Finish)' : '';
         return `${markLabel} (${s.mark.toFixed(1)}m): interval ${interval}, running ${running}${finishFlag}`;
       })
       .join('\n');
@@ -191,15 +243,44 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
     return `${header}\n${splitsText}`;
   };
 
-  const handleSave = () => {
+  const handleSave = (): boolean => {
+    if (!visibleSplits.length) {
+      alert('Please enter a valid distance and pace/time.');
+      return false;
+    }
+
     onSave({
       name: `Session ${distance}m`,
       distance,
       speed,
-      lane,
-      totalTime: splits[splits.length - 1].running,
-      splits
+      lane: effectiveLane,
+      totalTime: visibleSplits[visibleSplits.length - 1].running,
+      splits: visibleSplits
     });
+    return true;
+  };
+
+  const distanceInputValue = useMemo(() => {
+    if (distanceUnit === 'km') {
+      return parseFloat((distance / 1000).toFixed(3));
+    }
+    return parseFloat(distance.toFixed(1));
+  }, [distance, distanceUnit]);
+
+  const handleDistanceChange = (value: string) => {
+    const numericValue = parseFloat(value);
+    if (Number.isNaN(numericValue)) {
+      setDistance(0);
+      return;
+    }
+    const safeNumericValue = Math.max(0, numericValue);
+
+    if (distanceUnit === 'km') {
+      setDistance(parseFloat((safeNumericValue * 1000).toFixed(1)));
+      return;
+    }
+
+    setDistance(safeNumericValue);
   };
 
   return (
@@ -244,15 +325,29 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
             <div className="flex items-center justify-between mb-2 px-1">
               <p className="text-slate-300 text-sm font-semibold flex items-center gap-2">
                 <span className="material-symbols-outlined text-sm">straighten</span>
-                Distance (meters)
+                Distance ({distanceUnit === 'km' ? 'kilometers' : 'meters'})
               </p>
-
+              <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800">
+                <button
+                  onClick={() => setDistanceUnit('meter')}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${distanceUnit === 'meter' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                >
+                  Meter
+                </button>
+                <button
+                  onClick={() => setDistanceUnit('km')}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${distanceUnit === 'km' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                >
+                  KM
+                </button>
+              </div>
             </div>
             <input
               type="number"
-              value={distance}
-              onChange={(e) => setDistance(parseFloat(e.target.value) || 0)}
-
+              min="0"
+              step={distanceUnit === 'km' ? '0.001' : '0.1'}
+              value={distanceInputValue}
+              onChange={(e) => handleDistanceChange(e.target.value)}
               onFocus={(e) => e.target.select()}
               className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none transition-all"
             />
@@ -270,8 +365,9 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
             </div>
             <input
               type="number"
+              min="0"
               value={laps}
-              onChange={(e) => setLaps(e.target.value)}
+              onChange={(e) => setLaps(normalizeNonNegativeInput(e.target.value))}
               onFocus={(e) => e.target.select()}
               className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none transition-all"
             />
@@ -307,7 +403,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                   {speed.toFixed(1)} km/h
                 </div>
                 <div className="text-[10px] font-bold text-red-500 uppercase">
-                  {inputMins}:{parseFloat(inputSecs) < 10 ? '0' : ''}{parseFloat(inputSecs || '0').toFixed(1)} Total
+                  {formatMinSec((parseFloat(inputMins) || 0) * 60 + (parseFloat(inputSecs) || 0))} Total
                 </div>
               </div>
             </div>
@@ -315,8 +411,9 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
               <div className="flex-1 relative">
                 <input
                   type="number"
+                  min="0"
                   value={paceMins}
-                  onChange={(e) => setPaceMins(e.target.value)}
+                  onChange={(e) => setPaceMins(normalizeNonNegativeInput(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
@@ -325,9 +422,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
               <div className="flex-1 relative">
                 <input
                   type="number"
+                  min="0"
                   step="0.1"
                   value={paceSecs}
-                  onChange={(e) => setPaceSecs(e.target.value)}
+                  onChange={(e) => setPaceSecs(normalizeNonNegativeInput(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
@@ -347,7 +445,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                   {speed.toFixed(1)} km/h
                 </div>
                 <div className="text-[10px] font-bold text-red-500 uppercase">
-                  {paceMins}:{parseFloat(paceSecs) < 10 ? '0' : ''}{parseFloat(paceSecs || '0').toFixed(1)} /km
+                  {formatMinSec((parseFloat(paceMins) || 0) * 60 + (parseFloat(paceSecs) || 0))} /km
                 </div>
               </div>
             </div>
@@ -355,9 +453,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
               <div className="flex-1 relative">
                 <input
                   type="number"
+                  min="0"
                   placeholder="Min"
                   value={inputMins}
-                  onChange={(e) => setInputMins(e.target.value)}
+                  onChange={(e) => setInputMins(normalizeNonNegativeInput(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
@@ -366,10 +465,11 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
               <div className="flex-1 relative">
                 <input
                   type="number"
+                  min="0"
                   step="0.1"
                   placeholder="Sec"
                   value={inputSecs}
-                  onChange={(e) => setInputSecs(e.target.value)}
+                  onChange={(e) => setInputSecs(normalizeNonNegativeInput(e.target.value))}
                   onFocus={(e) => e.target.select()}
                   className="w-full rounded-2xl text-white focus:ring-2 focus:ring-red-500 border-slate-800 bg-slate-900 h-16 px-4 text-xl font-bold tabular-nums outline-none"
                 />
@@ -416,6 +516,13 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
             <h3 className="text-white text-base font-bold flex items-center gap-2">
               <span className="material-symbols-outlined text-red-600">timer_10_alt_1</span>
               Split Times
+              <button
+                onClick={cycleSplitGranularity}
+                className="ml-1 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-slate-700 bg-slate-900 text-slate-200 hover:text-white hover:border-slate-500 transition-all"
+                title="Cycle split display mode"
+              >
+                {splitGranularityButtonLabel}
+              </button>
             </h3>
             <div className="flex items-center gap-2">
               <SaveButton onSave={handleSave} />
@@ -433,10 +540,11 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {splits.map((split, i) => {
-                  const isLast = i === splits.length - 1;
+                {visibleSplits.map((split, i) => {
+                  const isLast = i === visibleSplits.length - 1;
+                  const rowKey = `${split.mark}-${split.label}-${split.running.toFixed(4)}-${i}`;
                   return (
-                    <tr key={split.mark} className={isLast ? 'bg-red-500/5' : ''}>
+                    <tr key={rowKey} className={isLast ? 'bg-red-500/5' : ''}>
                       <td className="px-4 py-4">
                         <div className="flex flex-col">
                           <span className="text-sm font-bold text-white">{split.label || `${split.mark}m`}</span>
@@ -463,7 +571,7 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
         </div>
 
         <p className="text-center text-xs text-slate-500 font-medium px-8 leading-relaxed mb-8">
-          Calculated for Lane {lane} on a standard 400m track. Pacing is based on time per kilometer.
+          Calculated for Lane {effectiveLane} on a standard 400m track. Showing splits every {splitGranularityLabel}. Pacing is based on time per kilometer.
         </p>
       </div>
 
@@ -488,10 +596,10 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
                 <div>
                   <h4 className="text-white font-bold mb-2 flex items-center gap-2">
                     <span className="text-red-600">•</span>
-                    Lap-Based Split Times
+                    Split Display Toggle
                   </h4>
                   <p className="text-slate-400 text-sm leading-relaxed">
-                    Split times are now calculated based on lap fractions (1/4 lap, 1/2 lap, 3/4 lap, 1 lap) instead of fixed distances. This provides more intuitive pacing markers for track runners.
+                    Split Times now has a single toggle button beside the title. Tap to cycle display mode in order: 1/4 lap, 1/2 lap, then 1 lap.
                   </p>
                 </div>
                 <div>
@@ -540,14 +648,15 @@ const CalculatorView: React.FC<CalculatorViewProps> = ({ onSave, sessionData, on
 
 
 interface SaveButtonProps {
-  onSave: () => void;
+  onSave: () => boolean;
 }
 
 const SaveButton: React.FC<SaveButtonProps> = ({ onSave }) => {
   const [saved, setSaved] = useState(false);
 
   const handleClick = () => {
-    onSave();
+    const didSave = onSave();
+    if (!didSave) return;
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
